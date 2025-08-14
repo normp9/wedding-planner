@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Montreal Civil Marriage Planner</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --fg:#111111;
+    --muted:#6b6b6b;
+    --accent:#0a84ff; /* high-contrast blue on white */
+    --accent-2:#111;  /* for focus rings on light */
+    --ok:#0a7d32;
+    --warn:#b00020;
+    --card:#f7f7f7;
+    --line:#e6e6e6;
+    --shadow: 0 2px 10px rgba(0,0,0,.06);
+    --radius: 12px;
+  }
+  *{box-sizing:border-box}
+  html, body{margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif; line-height:1.35}
+  .wrap{max-width:980px; margin:32px auto; padding:0 16px}
+  header{display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-bottom:16px}
+  h1{font-size:28px; margin:0; letter-spacing:.2px}
+  .sub{color:var(--muted); font-size:14px}
+  .pill{display:inline-flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:8px 12px; font-size:13px}
+  .countdown{font-variant-numeric:tabular-nums; font-weight:600}
+  .tabs{display:flex; gap:8px; border-bottom:1px solid var(--line); margin:16px 0 20px}
+  .tab{appearance:none; border:none; background:none; padding:12px 14px; font-weight:600; color:var(--muted); cursor:pointer; border-radius:10px 10px 0 0}
+  .tab[aria-selected="true"]{color:var(--fg); border:1px solid var(--line); border-bottom-color:var(--bg); background:var(--bg)}
+  .panel{display:none}
+  .panel.active{display:block; animation:fade .15s ease}
+  @keyframes fade{from{opacity:.4; transform:translateY(2px)} to{opacity:1; transform:translateY(0)}}
+
+  .grid{display:grid; gap:16px}
+  @media(min-width:860px){ .grid{grid-template-columns:1.2fr .8fr} }
+
+  .card{background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+  .card h3{margin:0; font-size:16px; padding:14px 16px; border-bottom:1px solid var(--line)}
+  .card .body{padding:14px 16px}
+
+  .row{display:flex; gap:8px; flex-wrap:wrap}
+  .row > *{flex:1}
+  label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+  input[type="text"], input[type="date"], input[type="time"], input[type="number"], textarea, select{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--fg);
+    font-size:14px; outline:none;
+  }
+  textarea{min-height:96px; resize:vertical}
+  input:focus, textarea:focus, select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(10,132,255,.18)}
+
+  .btn{appearance:none; border:1px solid var(--fg); color:#fff; background:var(--fg); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer}
+  .btn.secondary{background:transparent; color:var(--fg)}
+  .btn.ghost{border-color:var(--line); color:var(--fg)}
+  .btn.accent{background:var(--accent); border-color:var(--accent)}
+  .btn.small{padding:6px 10px; font-size:13px; border-radius:10px}
+  .btn:focus-visible{outline:3px solid var(--accent-2); outline-offset:2px}
+
+  .tasks{display:flex; flex-direction:column; gap:10px}
+  .task{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff}
+  .task input[type="checkbox"]{width:18px; height:18px}
+  .task .title{flex:1; font-size:14px}
+  .task .meta{display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px}
+  .task.done .title{text-decoration:line-through; color:var(--muted)}
+  .chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); padding:4px 8px; border-radius:999px; font-size:12px; background:var(--card)}
+
+  .inline-form{display:flex; gap:8px; flex-wrap:wrap}
+  .inline-form input[type="text"]{flex:2}
+  .inline-form .btn{flex:0 0 auto}
+
+  .list{display:flex; flex-direction:column; gap:10px}
+  .item{display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid var(--line); border-radius:12px; background:#fff}
+  .item .grow{flex:1}
+
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:8px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums}
+
+  .hint{font-size:12px; color:var(--muted)}
+  .danger{color:var(--warn)}
+  .success{color:var(--ok)}
+  .sr-only{position:absolute; left:-9999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Montreal Civil Marriage Planner</h1>
+      <div class="sub">Formal ceremony • 8 guests • Target date: <span id="targetDateText" class="mono">2025‑10‑25</span></div>
+    </div>
+    <div class="pill" title="Days until ceremony">
+      ⏳ <span class="countdown" id="countdown">—</span>
+    </div>
+    <div style="margin-left:auto"></div>
+    <button class="btn ghost small" id="exportBtn" aria-label="Export to JSON">Export</button>
+    <button class="btn ghost small" id="importBtn" aria-label="Import from JSON">Import</button>
+    <button class="btn ghost small" id="printBtn" aria-label="Print / Save PDF">Print</button>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="panel-ceremony" id="tab-ceremony">Civil ceremony</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="panel-reception" id="tab-reception">Reception</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="panel-guests" id="tab-guests">Guests</button>
+  </nav>
+
+  <!-- CEREMONY -->
+  <section id="panel-ceremony" class="panel active" role="tabpanel" aria-labelledby="tab-ceremony">
+    <div class="grid">
+      <div class="card">
+        <h3>Key Details</h3>
+        <div class="body">
+          <div class="row">
+            <div>
+              <label for="ceremony-date">Date</label>
+              <input type="date" id="ceremony-date" value="2025-10-25" />
+            </div>
+            <div>
+              <label for="ceremony-time">Time</label>
+              <input type="time" id="ceremony-time" value="14:00" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label for="ceremony-venue">Venue (e.g., Montréal City Hall, Château Ramezay – Salle de Nantes, Mount Royal lookout)</label>
+              <input type="text" id="ceremony-venue" placeholder="Venue name & room" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label for="officiant">Officiant</label>
+              <input type="text" id="officiant" placeholder="Name / Notary / Borough clerk" />
+            </div>
+            <div>
+              <label for="language">Language</label>
+              <select id="language">
+                <option>English</option>
+                <option>French</option>
+                <option>English & French</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label for="ceremony-notes">Notes</label>
+              <textarea id="ceremony-notes" placeholder="Anything formal to include, witness names, photo policy, accessibility…"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Budget Snapshot (editable)</h3>
+        <div class="body list">
+          <div class="item">
+            <div class="grow">
+              <label>Venue / Room</label>
+              <input type="number" id="budget-venue" min="0" step="1" placeholder="e.g., 317–1500" />
+              <div class="hint">Tip: City Hall ≈ low; Château Ramezay ≈ mid/high; private hall ≈ high</div>
+            </div>
+          </div>
+          <div class="item">
+            <div class="grow">
+              <label>Officiant / Notary</label>
+              <input type="number" id="budget-officiant" min="0" step="1" placeholder="e.g., 300–900" />
+            </div>
+          </div>
+          <div class="item">
+            <div class="grow">
+              <label>Documents / Admin</label>
+              <input type="number" id="budget-admin" min="0" step="1" placeholder="e.g., 100–250" />
+            </div>
+          </div>
+          <div class="item">
+            <div class="grow">
+              <label>Photography (ceremony only)</label>
+              <input type="number" id="budget-photo" min="0" step="1" placeholder="e.g., 300–1500" />
+            </div>
+          </div>
+          <div class="item">
+            <strong>Total: $ <span id="budget-total" class="mono">0</span></strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Checklist</h3>
+      <div class="body">
+        <form class="inline-form" id="ceremony-task-form" autocomplete="off">
+          <label class="sr-only" for="ceremony-task-input">Add task</label>
+          <input id="ceremony-task-input" type="text" placeholder="Add a task (e.g., Post 20‑day publication, confirm two witnesses…)" />
+          <select id="ceremony-task-priority" title="Priority">
+            <option value="P2">P2</option>
+            <option value="P1">P1 (high)</option>
+            <option value="P3">P3</option>
+          </select>
+          <input id="ceremony-task-due" type="date" />
+          <button class="btn small" type="submit">Add</button>
+        </form>
+
+        <div class="tasks" id="ceremony-tasks"></div>
+        <div class="toolbar">
+          <button class="btn ghost small" id="ceremony-clear-done">Clear completed</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECEPTION -->
+  <section id="panel-reception" class="panel" role="tabpanel" aria-labelledby="tab-reception">
+    <div class="grid">
+      <div class="card">
+        <h3>Dinner / Celebration (simple)</h3>
+        <div class="body">
+          <div class="row">
+            <div>
+              <label for="reception-venue">Restaurant</label>
+              <input type="text" id="reception-venue" placeholder="Name & address (Old Montréal recommended for photos & walkability)" />
+            </div>
+            <div>
+              <label for="reception-time">Reservation time</label>
+              <input type="time" id="reception-time" value="17:30" />
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label for="menu-notes">Menu / constraints</label>
+              <textarea id="menu-notes" placeholder="Prix fixe? Dietary notes? Corkage? Private room min spend?"></textarea>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div>
+              <label for="reception-budget">Budget (food & beverage)</label>
+              <input type="number" id="reception-budget" min="0" step="1" placeholder="e.g., 600–1500 for 8 ppl (varies widely)" />
+            </div>
+            <div>
+              <label for="transport">Transport plan</label>
+              <input type="text" id="transport" placeholder="Walk / rideshare / valet / parking" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Reception Checklist</h3>
+        <div class="body">
+          <form class="inline-form" id="reception-task-form" autocomplete="off">
+            <input id="reception-task-input" type="text" placeholder="Add task (e.g., Confirm headcount, cake plating, seating…)" />
+            <select id="reception-task-priority">
+              <option value="P2">P2</option>
+              <option value="P1">P1 (high)</option>
+              <option value="P3">P3</option>
+            </select>
+            <input id="reception-task-due" type="date" />
+            <button class="btn small" type="submit">Add</button>
+          </form>
+          <div class="tasks" id="reception-tasks"></div>
+          <div class="toolbar">
+            <button class="btn ghost small" id="reception-clear-done">Clear completed</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUESTS -->
+  <section id="panel-guests" class="panel" role="tabpanel" aria-labelledby="tab-guests">
+    <div class="card">
+      <h3>Guest List (max 8)</h3>
+      <div class="body">
+        <form class="inline-form" id="guest-form" autocomplete="off">
+          <input type="text" id="guest-name" placeholder="Full name" />
+          <select id="guest-rsvp">
+            <option value="pending">RSVP: pending</option>
+            <option value="yes">RSVP: yes</option>
+            <option value="no">RSVP: no</option>
+          </select>
+          <input type="text" id="guest-diet" placeholder="Dietary / notes" />
+          <button class="btn small" type="submit">Add</button>
+        </form>
+        <div id="guest-list" class="list" style="margin-top:12px"></div>
+        <div class="toolbar">
+          <span class="chip"><strong>Total</strong>: <span id="guest-count" class="mono">0</span> / 8</span>
+          <button class="btn ghost small" id="guests-clear">Clear all</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<input id="importFile" type="file" accept="application/json" class="sr-only" />
+
+<script>
+(function(){
+  const $ = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+
+  const state = {
+    targetDate: '2025-10-25',
+    ceremony:{
+      date:'2025-10-25', time:'14:00', venue:'', officiant:'', language:'English', notes:'',
+      budget:{venue:0, officiant:0, admin:0, photo:0}, tasks:[]
+    },
+    reception:{
+      venue:'', time:'17:30', menuNotes:'', budget:0, transport:'', tasks:[]
+    },
+    guests:[]
+  };
+
+  const STORAGE_KEY='montreal_civil_marriage_planner_v1';
+
+  function load(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
+    try{
+      const saved = JSON.parse(raw);
+      deepMerge(state, saved);
+    }catch(e){console.warn('Failed to parse saved data', e)}
+  }
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    recalcBudget();
+  }
+  function deepMerge(dst, src){
+    for(const k in src){
+      if(src[k] && typeof src[k]==='object' && !Array.isArray(src[k])){
+        if(!dst[k] || typeof dst[k]!=='object') dst[k] = {};
+        deepMerge(dst[k], src[k]);
+      }else{
+        dst[k] = src[k];
+      }
+    }
+  }
+
+  // Tabs
+  const tabs = $$('.tab');
+  tabs.forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      tabs.forEach(t=>t.setAttribute('aria-selected', String(t===tab)));
+      $$('.panel').forEach(p=>p.classList.remove('active'));
+      $('#'+tab.getAttribute('aria-controls')).classList.add('active');
+      tab.focus();
+    })
+  });
+
+  // Countdown
+  function updateCountdown(){
+    const target = new Date(state.targetDate + 'T00:00:00');
+    const now = new Date();
+    const diff = Math.ceil((target - now)/(1000*60*60*24));
+    $('#countdown').textContent = (diff>=0? diff : 0) + ' days';
+    $('#targetDateText').textContent = state.targetDate;
+  }
+
+  // Bind ceremony fields
+  function bindInputs(){
+    const map = [
+      ['ceremony-date','ceremony','date'],
+      ['ceremony-time','ceremony','time'],
+      ['ceremony-venue','ceremony','venue'],
+      ['officiant','ceremony','officiant'],
+      ['language','ceremony','language'],
+      ['ceremony-notes','ceremony','notes'],
+      ['reception-venue','reception','venue'],
+      ['reception-time','reception','time'],
+      ['menu-notes','reception','menuNotes'],
+      ['reception-budget','reception','budget'],
+      ['transport','reception','transport'],
+      ['budget-venue','ceremony','budget','venue'],
+      ['budget-officiant','ceremony','budget','officiant'],
+      ['budget-admin','ceremony','budget','admin'],
+      ['budget-photo','ceremony','budget','photo'],
+    ];
+    map.forEach(([id, group, key, subkey])=>{
+      const el = $('#'+id);
+      if(!el) return;
+      // Initialize UI from state
+      let v = subkey ? state[group][key][subkey] : state[group][key];
+      if(v !== undefined && el.value !== String(v)) el.value = v;
+      // Listeners
+      const handler = ()=>{
+        const val = (el.type==='number') ? Number(el.value||0) : el.value;
+        if(subkey){ state[group][key][subkey] = val; }
+        else { state[group][key] = val; }
+        if(group==='ceremony' && key==='date'){ state.targetDate = state.ceremony.date; updateCountdown(); }
+        save(); recalcBudget();
+      };
+      el.addEventListener('change', handler);
+      el.addEventListener('input', handler);
+    });
+  }
+
+  function recalcBudget(){
+    const b = state.ceremony.budget;
+    const total = (Number(b.venue)||0) + (Number(b.officiant)||0) + (Number(b.admin)||0) + (Number(b.photo)||0);
+    $('#budget-total').textContent = total.toLocaleString();
+  }
+
+  // Tasks
+  function renderTasks(section){
+    const listEl = $('#'+section+'-tasks');
+    listEl.innerHTML = '';
+    (state[section].tasks||[]).forEach((t, idx)=>{
+      const el = document.createElement('div');
+      el.className = 'task' + (t.done?' done':'');
+      el.innerHTML = `
+        <input type="checkbox" ${t.done?'checked':''} aria-label="Complete task">
+        <div class="title">${escapeHTML(t.title)}</div>
+        <div class="meta">
+          ${t.priority ? `<span class="chip">${t.priority}</span>`:''}
+          ${t.due ? `<span class="chip mono">due ${t.due}</span>`:''}
+          <button class="btn small ghost" aria-label="Delete">Delete</button>
+        </div>`;
+      const [cb,, meta] = el.children;
+      cb.addEventListener('change', ()=>{ t.done = cb.checked; el.classList.toggle('done', t.done); save(); });
+      meta.querySelector('button').addEventListener('click', ()=>{ state[section].tasks.splice(idx,1); renderTasks(section); save(); });
+      listEl.appendChild(el);
+    });
+  }
+  function addTask(section, title, priority, due){
+    if(!title.trim()) return;
+    state[section].tasks.push({title:title.trim(), priority, due, done:false});
+    save(); renderTasks(section);
+  }
+  $('#ceremony-task-form').addEventListener('submit', e=>{
+    e.preventDefault();
+    addTask('ceremony', $('#ceremony-task-input').value, $('#ceremony-task-priority').value, $('#ceremony-task-due').value);
+    e.target.reset();
+  });
+  $('#reception-task-form').addEventListener('submit', e=>{
+    e.preventDefault();
+    addTask('reception', $('#reception-task-input').value, $('#reception-task-priority').value, $('#reception-task-due').value);
+    e.target.reset();
+  });
+  $('#ceremony-clear-done').addEventListener('click', ()=>{ state.ceremony.tasks = state.ceremony.tasks.filter(t=>!t.done); renderTasks('ceremony'); save(); });
+  $('#reception-clear-done').addEventListener('click', ()=>{ state.reception.tasks = state.reception.tasks.filter(t=>!t.done); renderTasks('reception'); save(); });
+
+  // Guests
+  function renderGuests(){
+    const list = $('#guest-list');
+    list.innerHTML = '';
+    state.guests.forEach((g,i)=>{
+      const el = document.createElement('div');
+      el.className='item';
+      el.innerHTML = `
+        <div class="grow">
+          <div style="font-weight:600">${escapeHTML(g.name||'')}</div>
+          <div class="hint">RSVP: <span class="${g.rsvp==='yes'?'success': g.rsvp==='no'?'danger':''}">${g.rsvp}</span> · ${escapeHTML(g.diet||'')}</div>
+        </div>
+        <div class="row" style="flex:0 0 auto; min-width:240px">
+          <select aria-label="Change RSVP">
+            <option value="pending"${g.rsvp==='pending'?' selected':''}>pending</option>
+            <option value="yes"${g.rsvp==='yes'?' selected':''}>yes</option>
+            <option value="no"${g.rsvp==='no'?' selected':''}>no</option>
+          </select>
+          <button class="btn small ghost">Remove</button>
+        </div>`;
+      const sel = el.querySelector('select');
+      sel.addEventListener('change', ()=>{ g.rsvp = sel.value; save(); renderGuests(); });
+      el.querySelector('button').addEventListener('click', ()=>{ state.guests.splice(i,1); save(); renderGuests(); });
+      list.appendChild(el);
+    });
+    $('#guest-count').textContent = state.guests.length;
+  }
+  $('#guest-form').addEventListener('submit', e=>{
+    e.preventDefault();
+    const name = $('#guest-name').value.trim();
+    if(!name) return;
+    state.guests.push({name, rsvp: $('#guest-rsvp').value, diet: $('#guest-diet').value.trim()});
+    save(); renderGuests(); e.target.reset();
+  });
+  $('#guests-clear').addEventListener('click', ()=>{ if(confirm('Remove all guests?')){ state.guests = []; save(); renderGuests(); } });
+
+  // Export / Import / Print
+  $('#exportBtn').addEventListener('click', ()=>{
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'montreal-civil-marriage-plan.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  $('#importBtn').addEventListener('click', ()=> $('#importFile').click());
+  $('#importFile').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const text = await file.text();
+    try{
+      const data = JSON.parse(text);
+      deepMerge(state, data);
+      save(); hydrateUI();
+      alert('Imported successfully.');
+    }catch(err){ alert('Import failed: invalid JSON'); }
+    e.target.value='';
+  });
+  $('#printBtn').addEventListener('click', ()=> window.print());
+
+  // Utilities
+  function hydrateUI(){
+    bindInputs();
+    renderTasks('ceremony');
+    renderTasks('reception');
+    renderGuests();
+    updateCountdown();
+    recalcBudget();
+  }
+  function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
+
+  // Init
+  load();
+  hydrateUI();
+
+  // Keyboard: Ctrl/Cmd+S to save export
+  window.addEventListener('keydown', (e)=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); $('#exportBtn').click(); }
+  });
+
+})();
+</script>
+</body>
+</html>
