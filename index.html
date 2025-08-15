@@ -8,27 +8,53 @@
   :root{
     --bg:#ffffff;
     --fg:#111111;
-    --muted:#6b6b6b;
-    --accent:#0a84ff; /* high-contrast blue on white */
-    --accent-2:#111;  /* for focus rings on light */
+    --muted:#2d2d2d;
+    --accent:#0a84ff;
+    --accent-2:#111;
     --ok:#0a7d32;
     --warn:#b00020;
-    --card:#f7f7f7;
-    --line:#e6e6e6;
-    --shadow: 0 2px 10px rgba(0,0,0,.06);
-    --radius: 12px;
+    --line:rgba(0,0,0,.12);
+    --glass:rgba(255,255,255,.82); /* UI background over photo */
+    --glass-strong:rgba(255,255,255,.9);
+    --radius:12px;
+    --shadow:0 6px 24px rgba(0,0,0,.15);
   }
   *{box-sizing:border-box}
-  html, body{margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif; line-height:1.35}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--fg);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+    line-height:1.35; -webkit-font-smoothing:antialiased;
+    position:relative; overflow-y:auto;
+    /* External image as background (keep both people visible) */
+    background: url('IMG_7664.JPG') no-repeat center 40% fixed;
+    background-size: cover;
+  }
+  /* Subtle veil so text is readable atop any photo area */
+  body::after{
+    content:"";
+    position:fixed; inset:0;
+    background:linear-gradient(to bottom, rgba(255,255,255,.20), rgba(255,255,255,.20));
+    pointer-events:none;
+  }
+
   .wrap{max-width:980px; margin:32px auto; padding:0 16px}
-  header{display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-bottom:16px}
-  h1{font-size:28px; margin:0; letter-spacing:.2px}
-  .sub{color:var(--muted); font-size:14px}
-  .pill{display:inline-flex; align-items:center; gap:8px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:8px 12px; font-size:13px}
-  .countdown{font-variant-numeric:tabular-nums; font-weight:600}
-  .tabs{display:flex; gap:8px; border-bottom:1px solid var(--line); margin:16px 0 20px}
-  .tab{appearance:none; border:none; background:none; padding:12px 14px; font-weight:600; color:var(--muted); cursor:pointer; border-radius:10px 10px 0 0}
-  .tab[aria-selected="true"]{color:var(--fg); border:1px solid var(--line); border-bottom-color:var(--bg); background:var(--bg)}
+  header{
+    display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-bottom:16px;
+    background:var(--glass-strong); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:12px 14px; backdrop-filter:saturate(1.1) blur(6px);
+  }
+  h1{font-size:28px; margin:0; letter-spacing:.2px; text-shadow:0 1px 0 rgba(255,255,255,.7)}
+  .sub{color:#222; font-size:14px; opacity:.9}
+  .pill{display:inline-flex; align-items:center; gap:8px; background:var(--glass-strong); border:1px solid var(--line);
+        border-radius:999px; padding:8px 12px; font-size:13px; box-shadow:var(--shadow)}
+  .countdown{font-variant-numeric:tabular-nums; font-weight:700}
+
+  .tabs{display:flex; gap:8px; margin:16px 0 20px}
+  .tab{appearance:none; border:1px solid var(--line); background:var(--glass);
+        padding:10px 12px; font-weight:700; color:var(--fg); cursor:pointer; border-radius:10px;
+        backdrop-filter: blur(6px)}
+  .tab[aria-selected="true"]{background:var(--glass-strong); box-shadow:var(--shadow)}
   .panel{display:none}
   .panel.active{display:block; animation:fade .15s ease}
   @keyframes fade{from{opacity:.4; transform:translateY(2px)} to{opacity:1; transform:translateY(0)}}
@@ -36,50 +62,73 @@
   .grid{display:grid; gap:16px}
   @media(min-width:860px){ .grid{grid-template-columns:1.2fr .8fr} }
 
-  .card{background:var(--bg); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
-  .card h3{margin:0; font-size:16px; padding:14px 16px; border-bottom:1px solid var(--line)}
+  .card{
+    background:var(--glass); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); backdrop-filter: blur(8px) saturate(1.05);
+  }
+  .card h3{margin:0; font-size:16px; padding:14px 16px; border-bottom:1px solid var(--line);
+           background:var(--glass-strong)}
   .card .body{padding:14px 16px}
 
-  .row{display:flex; gap:8px; flex-wrap:wrap}
-  .row > *{flex:1}
-  label{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+  label{font-size:12px; color:#1d1d1d; display:block; margin-bottom:6px; text-shadow:0 1px 0 rgba(255,255,255,.5)}
   input[type="text"], input[type="date"], input[type="time"], input[type="number"], textarea, select{
-    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--fg);
-    font-size:14px; outline:none;
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+    background:rgba(255,255,255,.95); color:#111; font-size:14px; outline:none;
   }
   textarea{min-height:96px; resize:vertical}
   input:focus, textarea:focus, select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(10,132,255,.18)}
 
-  .btn{appearance:none; border:1px solid var(--fg); color:#fff; background:var(--fg); padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer}
-  .btn.secondary{background:transparent; color:var(--fg)}
-  .btn.ghost{border-color:var(--line); color:var(--fg)}
-  .btn.accent{background:var(--accent); border-color:var(--accent)}
+  /* BUTTON SYSTEM — enforce legible contrast always */
+  .btn{
+    appearance:none; border:2px solid transparent; border-radius:12px; padding:10px 14px;
+    font-weight:800; cursor:pointer; transition:transform .02s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  /* Primary: dark background, white text */
+  .btn.primary{background:#111; color:#fff !important; border-color:#111}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .btn.primary:focus-visible{outline:3px solid #fff; outline-offset:2px; box-shadow:0 0 0 3px rgba(10,132,255,.25)}
+  /* Accent: blue background, white text */
+  .btn.accent{background:var(--accent); border-color:var(--accent); color:#fff !important}
+  .btn.accent:focus-visible{outline:3px solid #fff; outline-offset:2px; box-shadow:0 0 0 3px rgba(10,132,255,.35)}
+  /* Ghost on glass: light fill so dark text is visible */
+  .btn.ghost{background:rgba(255,255,255,.92); border-color:var(--line); color:#111 !important}
+  .btn.ghost:hover{background:#fff}
   .btn.small{padding:6px 10px; font-size:13px; border-radius:10px}
-  .btn:focus-visible{outline:3px solid var(--accent-2); outline-offset:2px}
+  .btn[disabled]{opacity:.6; cursor:not-allowed; color:#fff !important}
+
+  .row{display:flex; gap:8px; flex-wrap:wrap}
+  .row > *{flex:1}
 
   .tasks{display:flex; flex-direction:column; gap:10px}
-  .task{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:#fff}
+  .task{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line);
+        border-radius:12px; background:rgba(255,255,255,.96)}
   .task input[type="checkbox"]{width:18px; height:18px}
-  .task .title{flex:1; font-size:14px}
-  .task .meta{display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px}
-  .task.done .title{text-decoration:line-through; color:var(--muted)}
-  .chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); padding:4px 8px; border-radius:999px; font-size:12px; background:var(--card)}
+  .task .title{flex:1; font-size:14px; color:#111}
+  .task .meta{display:flex; gap:10px; align-items:center; color:#333; font-size:12px}
+  .task.done .title{text-decoration:line-through; color:#666}
+  .chip{display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line);
+        padding:4px 8px; border-radius:999px; font-size:12px; background:rgba(255,255,255,.92)}
 
   .inline-form{display:flex; gap:8px; flex-wrap:wrap}
   .inline-form input[type="text"]{flex:2}
   .inline-form .btn{flex:0 0 auto}
 
   .list{display:flex; flex-direction:column; gap:10px}
-  .item{display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid var(--line); border-radius:12px; background:#fff}
+  .item{display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid var(--line);
+        border-radius:12px; background:rgba(255,255,255,.96)}
   .item .grow{flex:1}
 
   .toolbar{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:8px}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums}
-
-  .hint{font-size:12px; color:var(--muted)}
-  .danger{color:var(--warn)}
-  .success{color:var(--ok)}
   .sr-only{position:absolute; left:-9999px}
+
+  /* Print cleanly on white if exported to PDF from Safari */
+  @media print {
+    body::after { display:none !important; }
+    header, .card, .tab { background:#fff !important; backdrop-filter:none !important; box-shadow:none !important; }
+    .btn { display:none !important; }
+  }
 </style>
 </head>
 <body>
@@ -143,7 +192,7 @@
           <div class="row" style="margin-top:10px">
             <div>
               <label for="ceremony-notes">Notes</label>
-              <textarea id="ceremony-notes" placeholder="Anything formal to include, witness names, photo policy, accessibility…"></textarea>
+              <textarea id="ceremony-notes" placeholder="Witness names, photo policy, accessibility…"></textarea>
             </div>
           </div>
         </div>
@@ -156,7 +205,6 @@
             <div class="grow">
               <label>Venue / Room</label>
               <input type="number" id="budget-venue" min="0" step="1" placeholder="e.g., 317–1500" />
-              <div class="hint">Tip: City Hall ≈ low; Château Ramezay ≈ mid/high; private hall ≈ high</div>
             </div>
           </div>
           <div class="item">
@@ -189,19 +237,19 @@
       <div class="body">
         <form class="inline-form" id="ceremony-task-form" autocomplete="off">
           <label class="sr-only" for="ceremony-task-input">Add task</label>
-          <input id="ceremony-task-input" type="text" placeholder="Add a task (e.g., Post 20‑day publication, confirm two witnesses…)" />
+          <input id="ceremony-task-input" type="text" placeholder="Add a task (e.g., Publication of intent, confirm witnesses…)" />
           <select id="ceremony-task-priority" title="Priority">
             <option value="P2">P2</option>
             <option value="P1">P1 (high)</option>
             <option value="P3">P3</option>
           </select>
           <input id="ceremony-task-due" type="date" />
-          <button class="btn small" type="submit">Add</button>
+          <button class="btn small primary" type="submit">Add</button>
         </form>
 
         <div class="tasks" id="ceremony-tasks"></div>
         <div class="toolbar">
-          <button class="btn ghost small" id="ceremony-clear-done">Clear completed</button>
+          <button class="btn small ghost" id="ceremony-clear-done">Clear completed</button>
         </div>
       </div>
     </div>
@@ -253,11 +301,11 @@
               <option value="P3">P3</option>
             </select>
             <input id="reception-task-due" type="date" />
-            <button class="btn small" type="submit">Add</button>
+            <button class="btn small primary" type="submit">Add</button>
           </form>
           <div class="tasks" id="reception-tasks"></div>
           <div class="toolbar">
-            <button class="btn ghost small" id="reception-clear-done">Clear completed</button>
+            <button class="btn small ghost" id="reception-clear-done">Clear completed</button>
           </div>
         </div>
       </div>
@@ -277,12 +325,12 @@
             <option value="no">RSVP: no</option>
           </select>
           <input type="text" id="guest-diet" placeholder="Dietary / notes" />
-          <button class="btn small" type="submit">Add</button>
+          <button class="btn small primary" type="submit">Add</button>
         </form>
         <div id="guest-list" class="list" style="margin-top:12px"></div>
         <div class="toolbar">
           <span class="chip"><strong>Total</strong>: <span id="guest-count" class="mono">0</span> / 8</span>
-          <button class="btn ghost small" id="guests-clear">Clear all</button>
+          <button class="btn small ghost" id="guests-clear">Clear all</button>
         </div>
       </div>
     </div>
@@ -308,7 +356,7 @@
     guests:[]
   };
 
-  const STORAGE_KEY='montreal_civil_marriage_planner_v1';
+  const STORAGE_KEY='montreal_civil_marriage_planner_v3';
 
   function load(){
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -353,7 +401,7 @@
     $('#targetDateText').textContent = state.targetDate;
   }
 
-  // Bind ceremony fields
+  // Bind fields
   function bindInputs(){
     const map = [
       ['ceremony-date','ceremony','date'],
@@ -375,10 +423,8 @@
     map.forEach(([id, group, key, subkey])=>{
       const el = $('#'+id);
       if(!el) return;
-      // Initialize UI from state
       let v = subkey ? state[group][key][subkey] : state[group][key];
       if(v !== undefined && el.value !== String(v)) el.value = v;
-      // Listeners
       const handler = ()=>{
         const val = (el.type==='number') ? Number(el.value||0) : el.value;
         if(subkey){ state[group][key][subkey] = val; }
@@ -445,8 +491,8 @@
       el.className='item';
       el.innerHTML = `
         <div class="grow">
-          <div style="font-weight:600">${escapeHTML(g.name||'')}</div>
-          <div class="hint">RSVP: <span class="${g.rsvp==='yes'?'success': g.rsvp==='no'?'danger':''}">${g.rsvp}</span> · ${escapeHTML(g.diet||'')}</div>
+          <div style="font-weight:700; color:#111">${escapeHTML(g.name||'')}</div>
+          <div class="sub">RSVP: <span style="font-weight:700; color:${g.rsvp==='yes'?'#0a7d32': g.rsvp==='no'?'#b00020':'#333'}">${g.rsvp}</span> · ${escapeHTML(g.diet||'')}</div>
         </div>
         <div class="row" style="flex:0 0 auto; min-width:240px">
           <select aria-label="Change RSVP">
@@ -497,7 +543,6 @@
   });
   $('#printBtn').addEventListener('click', ()=> window.print());
 
-  // Utilities
   function hydrateUI(){
     bindInputs();
     renderTasks('ceremony');
@@ -508,15 +553,13 @@
   }
   function escapeHTML(s){ return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])) }
 
-  // Init
   load();
   hydrateUI();
 
-  // Keyboard: Ctrl/Cmd+S to save export
+  // Keyboard: Ctrl/Cmd+S to quickly export JSON
   window.addEventListener('keydown', (e)=>{
     if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); $('#exportBtn').click(); }
   });
-
 })();
 </script>
 </body>
